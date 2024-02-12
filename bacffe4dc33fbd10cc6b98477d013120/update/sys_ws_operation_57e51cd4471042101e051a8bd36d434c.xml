@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>PATCH</http_method>
+        <name>updateCustomerContact</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var statusCode;
+    var result = {};
+    var gcxValidationUtil = new GCXValidationUtil;
+    var contact = request.body.data.contact;
+    var sysId = request.pathParams.sysId;
+    var errorList = [];
+
+    var custContact = new GlideRecord('customer_contact');
+    custContact.addQuery('sys_id', sysId);
+    custContact.query();
+    if (!custContact.next()) {
+        result.contact = 'Invalid Sys_Id';
+        statusCode = 422;
+    } else {
+        if (contact.firstName && (!gcxValidationUtil.validateContactName(contact.firstName))) {
+            errorList.push("Invalid First Name");
+        }
+        if (contact.lastName && (!gcxValidationUtil.validateContactName(contact.lastName))) {
+            errorList.push("Invalid Last Name");
+        }
+        if (contact.mobilePhone && (!gcxValidationUtil.validatePhoneNumber(contact.mobilePhone))) {
+            errorList.push("Invalid Mobile Phone");
+        }
+        if (contact.homePhone && (!gcxValidationUtil.validatePhoneNumber(contact.homePhone))) {
+            errorList.push("Invalid Home Phone");
+        }
+        if (contact.businessPhone && (!gcxValidationUtil.validatePhoneNumber(contact.businessPhone))) {
+            errorList.push("Invalid Business Phone");
+        }
+        if (contact.otherPhone && (!gcxValidationUtil.validatePhoneNumber(contact.alternatePhone))) {
+            errorList.push("Invalid Other Phone");
+        }
+        if (contact.email && (!gcxValidationUtil.validateEmail(contact.email))) {
+            errorList.push("Invalid Email ID");
+        }
+
+        if (errorList.length > 0) {
+            result.contact = errorList;
+            statusCode = 422;
+        } else {
+            custContact.first_name = contact.firstName;
+            custContact.last_name = contact.lastName;
+            custContact.introduction = contact.prefix;
+            custContact.gender = contact.gender;
+            custContact.email = contact.email;
+            custContact.sn_tmt_core_external_id = contact.externalId;
+            custContact.home_phone = contact.homePhone;
+            custContact.mobile_phone = contact.mobilePhone;
+            custContact.phone = contact.businessPhone;
+            custContact.u_alternate_phone = contact.alternatePhone;
+            custContact.title = contact.title;
+            custContact.street = contact.street;
+            custContact.city = contact.city;
+            custContact.state = contact.state;
+            custContact.country = contact.countryCode;
+            custContact.zip = contact.postalCode;
+            custContact.u_written_language = contact.writtenLanguage;
+            custContact.u_spoken_language = contact.spokenLanguage;
+            custContact.update();
+            result.contact = 'Contact updated successfully.';
+            statusCode = 200;
+        }
+
+    }
+
+    response.setBody(result);
+    response.setStatus(statusCode);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account/contact/{sysId}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/contact/{sysId}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:58:05</sys_created_on>
+        <sys_id>57e51cd4471042101e051a8bd36d434c</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>updateCustomerContact</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_57e51cd4471042101e051a8bd36d434c</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:59:21</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

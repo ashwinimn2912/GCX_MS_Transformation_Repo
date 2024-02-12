@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_1123126_gcx_ms_t.CreateCustomerSupplierAccount</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>CreateCustomerSupplierAccount</name>
+        <script><![CDATA[var CreateCustomerSupplierAccount = Class.create();
+CreateCustomerSupplierAccount.prototype = {
+    initialize: function() {
+        this.response = new sn_tmt_core.BaseObject();
+        this.request = new sn_tmt_core.BaseObject();
+        this.accountSysId;
+        this.contactSysId;
+        this.locationSysId;
+        this.errorList = {};
+        this.sysIdList = {};
+    },
+
+    createAccount: function(account, contact, location) {
+        var custAccount = new GlideRecord('customer_account');
+        var accountSysIdList = [];
+        var contactSysIdList = [];
+        //Checking for the Account whether already exists in the servicenow. 
+        custAccount.addQuery('name', account.name);
+        custAccount.addQuery('phone', account.phone);
+        custAccount.addQuery('website', account.website);
+        custAccount.addQuery('fax_phone', account.faxPhone);
+        custAccount.query();
+        if (custAccount.next() && !account.override) {
+            this.response.details = 'Account already Exist';
+            this.response.setValue('status', 422);
+            return this.response;
+        } 
+		if (account.parentAccount) {
+            //Check if the parent account is valid
+			var parentAccountCheck = new GlideRecord('customer_account');
+            parentAccountCheck.addQuery('sys_id', account.parentAccount);
+            parentAccountCheck.query();
+            if (!parentAccountCheck.next()) {
+                this.response.details = 'Parent Account does not Exist';
+                this.response.setValue('status', 422);
+                return this.response;
+            }
+        }
+
+            for (var j = 0; j < contact.length; j++) {
+                var contactCheck = new GlideRecord('customer_contact');
+                contactCheck.addQuery('first_name', contact[j].firstName);
+                contactCheck.addQuery('last_name', contact[j].lastName);
+                contactCheck.addQuery('email', contact[j].email);
+                contactCheck.query();
+                if (contactCheck.next() && !contact[j].override) {
+                    this.response.details = 'Contact already Exist';
+                    this.response.setValue('status', 422);
+                    return this.response;
+                }
+            }
+            //Create new account	
+            custAccount.initialize();
+            custAccount.name = account.name;
+            custAccount.account_parent = account.parentAccount;
+            custAccount.partner = account.partner;
+            custAccount.customer = account.customer;
+            custAccount.fax_phone = account.faxPhone;
+            custAccount.phone = account.phone;
+            custAccount.sn_tmt_core_external_id = account.externalId;
+            custAccount.website = account.website;
+            custAccount.u_account_state = account.accountState;
+            custAccount.u_currency_code = account.currencyCode;
+            custAccount.u_gcx_region = account.gcxRegion;
+            custAccount.u_gcx_entity = account.gcxEntity;
+            custAccount.u_gcx_area = account.gcxArea;
+            custAccount.u_sap_vendor_number = account.sapVendorNumber;
+            custAccount.vendor_type = account.vendorType;
+            custAccount.u_purchasing_organization = account.purchasingOrganization;
+
+            custAccount.insert();
+            this.accountSysId = custAccount.sys_id;
+            this.accountExternalId = custAccount.sn_tmt_core_external_id;
+            accountSysIdList.push({
+                Id: this.accountSysId,
+				accountNumber:custAccount.number,
+                externalId: this.accountExternalId
+            });
+            this.response.account = accountSysIdList;
+
+            for (var i = 0; i < contact.length; i++) {
+                contactSysIdList.push(this.createCustomerContact(contact[i], this.accountSysId));
+            }
+            this.response.contact = contactSysIdList;
+
+            var locationSysIdList = [];
+            if (location.length > 0) {
+			
+                for (var k = 0; k < location.length; k++) {
+					location[k].externalId = (location[k].externalId != undefined && location[k].externalId.trim() != '') ? location[k].externalId : this.accountExternalId;
+                    locationSysIdList.push(this.createCustomerLocation(location[k]));
+                }
+                this.response.location = locationSysIdList;
+            }
+
+            this.response.setValue('status', 201);
+            return this.response;
+
+    },
+
+    createCustomerContact: function(contact, accSysId) {
+        //create new contact
+        var custContact = new GlideRecord('customer_contact');
+        custContact.first_name = contact.firstName;
+        custContact.last_name = contact.lastName;
+        custContact.introduction = contact.prefix;
+        custContact.gender = contact.gender;
+        custContact.email = contact.email;
+        custContact.sn_tmt_core_external_id = contact.externalId;
+        custContact.home_phone = contact.homePhone;
+        custContact.mobile_phone = contact.mobilePhone;
+        custContact.phone = contact.businessPhone;
+        custContact.u_alternate_phone = contact.alternatePhone;
+        custContact.title = contact.title;
+        custContact.street = contact.street;
+        custContact.city = contact.city;
+        custContact.state = contact.state;
+        custContact.country = contact.countryCode;
+        custContact.zip = contact.postalCode;
+        custContact.u_written_language = contact.writtenLanguage;
+        custContact.u_spoken_language = contact.spokenLanguage;
+        custContact.account = accSysId;
+        custContact.insert();
+        this.contactSysId = custContact.sys_id;
+        this.contactExternalId = custContact.sn_tmt_core_external_id;
+        return {
+            Id: this.contactSysId,
+            externalId: this.contactExternalId
+        };
+    },
+
+    createCustomerLocation: function(location) {
+        //Create new location
+
+        var loc = new GlideRecord('cmn_location');
+        var acc_rel = new GlideRecord('account_address_relationship');
+
+        if (!location.type || location.type == 'billing') {
+            location.type = 'billing';
+            loc.sn_tmt_core_external_id = location.externalId;
+            loc.street = location.billingStreet;
+            loc.city = location.billingCity;
+            loc.state = location.billingState;
+            loc.zip = location.billingPostalCode;
+            loc.country = location.billingCountry;
+            loc.longitude = location.billingLongitude;
+            loc.latitude = location.billingLatitude;
+            loc.insert();
+            this.locationSysId = loc.sys_id;
+            this.locationExternalId = loc.sn_tmt_core_external_id;
+        } else {
+            loc.sn_tmt_core_external_id = location.externalId;
+            loc.street = location.shippingStreet;
+            loc.city = location.shippingCity;
+            loc.state = location.shippingState;
+            loc.zip = location.shippingPostalCode;
+            loc.country = location.shippingCountry;
+            loc.longitude = location.shippingLongitude;
+            loc.latitude = location.shippingLatitude;
+            loc.insert();
+            this.locationSysId = loc.sys_id;
+            this.locationExternalId = loc.sn_tmt_core_external_id;
+        }
+
+        //Insert into Account_Address_relationship table
+        acc_rel.account = this.accountSysId;
+        acc_rel.location = this.locationSysId;
+        acc_rel.type = location.type;
+        acc_rel.insert();
+        return {
+            Id: this.locationSysId,
+            externalId: this.locationExternalId
+        };
+    },
+    type: 'CreateCustomerSupplierAccount'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:53:02</sys_created_on>
+        <sys_id>7ba41094471042101e051a8bd36d43ba</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>CreateCustomerSupplierAccount</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_script_include_7ba41094471042101e051a8bd36d43ba</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:53:02</sys_updated_on>
+    </sys_script_include>
+</record_update>

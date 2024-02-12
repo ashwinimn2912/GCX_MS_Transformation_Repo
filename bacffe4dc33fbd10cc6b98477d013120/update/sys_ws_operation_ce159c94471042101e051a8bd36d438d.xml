@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>PUT</http_method>
+        <name>addNewCustomerContact</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var req = request.body.data;
+    var status;
+    var statusCode;
+    var result = {};
+
+    var contact = req.contact;
+
+    var accountSysId = request.pathParams.sysId;
+
+    if (!contact) {
+        result.body = 'Missing Contact details';
+        response.setBody(result);
+        response.setStatus(400);
+        return;
+    }
+
+    var custAccount = new GlideRecord('customer_account');
+    //Checking If the sys_id is valid or not. 
+    custAccount.addQuery('sys_id', accountSysId);
+    custAccount.query();
+    if (!custAccount.next()) {
+        result.body = 'Invalid Sys ID, Account not found';
+        response.setBody(result);
+        response.setStatus(422);
+        return;
+    }
+
+    var gcxValidationUtil = new GCXValidationUtil;
+    var contactValidationList = gcxValidationUtil.validateContact(contact);
+
+    if (contactValidationList) {
+        result.contact = contactValidationList;
+        response.setBody(result);
+        response.setStatus(422);
+        return;
+    } else {
+        var contactList = [];
+        for (var i = 0; i < contact.length; i++) {
+            var createPartner = new CreateCustomerSupplierAccount;
+            contactList.push(createPartner.createCustomerContact(contact[i], accountSysId));
+            result.contact = contactList;
+            statusCode = 201;
+        }
+    }
+    response.setBody(result);
+    response.setStatus(statusCode);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account/contact/{sysId}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/contact/{sysId}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:54:33</sys_created_on>
+        <sys_id>ce159c94471042101e051a8bd36d438d</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>addNewCustomerContact</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_ce159c94471042101e051a8bd36d438d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:54:33</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

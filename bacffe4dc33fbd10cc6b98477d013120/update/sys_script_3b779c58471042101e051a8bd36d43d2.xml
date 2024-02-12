@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update sys_domain="global" table="sys_script">
+    <sys_script action="INSERT_OR_UPDATE">
+        <abort_action>false</abort_action>
+        <access>package_private</access>
+        <action_delete>false</action_delete>
+        <action_insert>true</action_insert>
+        <action_query>false</action_query>
+        <action_update>true</action_update>
+        <active>true</active>
+        <add_message>false</add_message>
+        <advanced>true</advanced>
+        <change_fields>false</change_fields>
+        <client_callable>false</client_callable>
+        <collection>sn_prd_pm_product_offering</collection>
+        <condition/>
+        <description/>
+        <execute_function>false</execute_function>
+        <filter_condition/>
+        <is_rest>false</is_rest>
+        <message/>
+        <name>Salesforce catalog sync</name>
+        <order>100</order>
+        <priority>100</priority>
+        <rest_method/>
+        <rest_method_text/>
+        <rest_service/>
+        <rest_service_text/>
+        <rest_variables/>
+        <role_conditions/>
+        <script><![CDATA[(function executeRule(current, previous /*null when async*/ ) {
+
+    try {
+        var postRequest = new sn_ws.RESTMessageV2('Product Catalog Salesforce', 'Post Product Catalog Changes');
+        var patchRequest = new sn_ws.RESTMessageV2('Product Catalog Salesforce', 'Update Product Catalog Changes');
+        var name = current.name;
+        var description = current.description;
+        var family = current.u_family;
+        var status = current.status;
+        var externalId = current.external_id;
+        var active = "true";
+        var req;
+        var response;
+        var responseBody;
+        var httpStatus;
+
+        if (status != 'published') {
+            active = "false";
+        }
+
+        if (externalId == "") {
+            req = '{"Name": "' + name + '", "Description": "' + description + '", "Family": "' + family + '", "isActive": "' + active + '", "Entity__c": "MS"}';
+            gs.info(req);
+            postRequest.setRequestHeader("Content-Type", "application/json");
+            postRequest.setRequestBody(req);
+            response = postRequest.execute();
+			var responseObject = JSON.parse(response.getBody());
+            gs.info(responseBody);
+            var productOff = new GlideRecord('sn_prd_pm_product_offering');
+            productOff.addQuery('sys_id', current.sys_id);
+            productOff.query();
+            if (productOff.next()) {
+                productOff.external_id = responseObject.id;
+                productOff.update();
+            }
+
+            httpStatus = response.getStatusCode();
+        } else {
+            req = '{"Name": "' + name + '", "Description": "' + description + '", "Family": "' + family + '", "isActive": "' + active + '", "Entity__c": "MS"}';
+            gs.info(req);
+            patchRequest.setRequestHeader("Content-Type", "application/json");
+			var url = "https://gcx--prodaptdev.sandbox.my.salesforce.com/services/data/v56.0/sobjects/Product2/" + externalId;
+            patchRequest.setEndpoint(url);
+            patchRequest.setRequestBody(req);
+            response = patchRequest.execute();
+            responseBody = response.getBody();
+            gs.info(responseBody);
+            httpStatus = response.getStatusCode();
+
+        }
+
+
+    } catch (ex) {
+        var message = ex.message;
+        gs.error(message);
+    }
+
+})(current, previous);]]></script>
+        <sys_class_name>sys_script</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 11:07:09</sys_created_on>
+        <sys_domain>global</sys_domain>
+        <sys_domain_path>/</sys_domain_path>
+        <sys_id>3b779c58471042101e051a8bd36d43d2</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Salesforce catalog sync</sys_name>
+        <sys_overrides/>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_script_3b779c58471042101e051a8bd36d43d2</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 11:07:09</sys_updated_on>
+        <template/>
+        <when>async_always</when>
+    </sys_script>
+    <sys_translated_text action="delete_multiple" query="documentkey=3b779c58471042101e051a8bd36d43d2"/>
+</record_update>

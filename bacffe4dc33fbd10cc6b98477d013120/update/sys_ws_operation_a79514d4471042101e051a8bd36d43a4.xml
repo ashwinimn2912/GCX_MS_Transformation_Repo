@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>GET</http_method>
+        <name>getCustomerAccount</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var res = {};
+    var status;
+    var statuscode;
+
+    var customerSysId = request.pathParams.sysId;
+
+    var customer = new GlideRecord('customer_account');
+    customer.addQuery('sys_id', customerSysId);
+    customer.query();
+    if (!customer.next()) {
+        status = "Error";
+        statuscode = "400";
+        res.error = "No Account Found, Given SysId " + customerSysId + " is Invalid";
+        response.setBody(res);
+        response.setStatus(statuscode);
+        return;
+
+    } else {
+        var accountDetails = {};
+        var contactsDetails = [];
+        var locationsDetails = [];
+
+        var accountSysid = customer.sys_id;
+        accountDetails.name = customer.getValue('name');
+        accountDetails.parentAccount = customer.getValue('account_parent');
+        accountDetails.website = customer.getValue('website');
+        accountDetails.externalId = customer.getValue('sn_tmt_core_external_id');
+        accountDetails.phone = customer.getValue('phone');
+        accountDetails.faxPhone = customer.getValue('fax_phone');
+        accountDetails.accountState = customer.getValue('u_account_state');
+        accountDetails.gcxEntity = customer.getValue('u_gcx_entity');
+        accountDetails.gcxArea = customer.getValue('u_gcx_area');
+        accountDetails.gcxRegion = customer.getValue('u_gcx_region');
+        accountDetails.currencyCode = customer.getValue('u_currency_code');
+
+        var contact = new GlideRecord('customer_contact');
+        contact.addQuery('account.sys_id', accountSysid);
+        contact.query();
+        while (contact.next()) {
+            contactsDetails.push({
+                externalId: contact.getValue('sn_tmt_core_external_id'),
+                name: contact.getValue('name'),
+                firstName: contact.getValue('first_name'),
+                lastName: contact.getValue('last_name'),
+                prefix: contact.getValue('introduction'),
+                gender: contact.getValue('gender'),
+                email: contact.getValue('email'),
+                mobilePhone: contact.getValue('mobile_phone'),
+                homePhone: contact.getValue('home_phone'),
+                businessPhone: contact.getValue('phone'),
+                alternatePhone: contact.getValue('u_alternate_phone'),
+                title: contact.getValue('title'),
+                street: contact.getValue('street'),
+                city: contact.getValue('city'),
+                state: contact.getValue('state'),
+                countryCode: contact.getValue('country'),
+                postalCode: contact.getValue('zip'),
+                writtenLanguage: contact.getValue('u_written_language'),
+                spokenLanguage: contact.getValue('u_spoken_language')
+            });
+        }
+
+        var acc_loc = new GlideRecord('account_address_relationship');
+        acc_loc.addQuery('account.sys_id', accountSysid);
+        acc_loc.query();
+
+        while (acc_loc.next()) {
+
+            var type = acc_loc.getValue('type');
+            var location = acc_loc.getValue('location');
+
+            var addressType = new GlideRecord('cmn_location_type');
+            addressType.addQuery('sys_id', type);
+            addressType.query();
+            if (addressType.next()) {
+                var adType = addressType.getValue('name');
+            }
+
+            var loc = new GlideRecord('cmn_location');
+            loc.addQuery('sys_id', location);
+            loc.query();
+            if (loc.next()) {
+                locationsDetails.push({
+                    type: adType,
+                    //  externalId: loc.getValue('sn_tmt_core_external_id'),
+                    street: loc.getValue('street'),
+                    city: loc.getValue('city'),
+                    state: loc.getValue('state'),
+                    country: loc.getValue('country'),
+                    pincode: loc.getValue('zip'),
+                    latitude: loc.getValue('latitude'),
+                    longitude: loc.getValue('longitude')
+                });
+
+            }
+        }
+
+        status = "Success";
+        statuscode = "200";
+        res.account = accountDetails;
+        res.contact = contactsDetails;
+        res.location = locationsDetails;
+        response.setBody(res);
+        response.setStatus(statuscode);
+    }
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account/{sysId}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/{sysId}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:56:47</sys_created_on>
+        <sys_id>a79514d4471042101e051a8bd36d43a4</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>getCustomerAccount</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_a79514d4471042101e051a8bd36d43a4</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:56:47</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

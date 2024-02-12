@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>PATCH</http_method>
+        <name>updateCustomerAccount</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var req = request.body.data;
+    var errorList = [];
+    var statuscode;
+    var result = {};
+    var gcxValidationUtil = new GCXValidationUtil;
+    var account = req.account;
+    var sysId = request.pathParams.sysId;
+
+
+    try {
+        var custAccount = new GlideRecord('customer_account');
+        custAccount.addQuery('sys_id', sysId);
+        custAccount.query();
+        if (!custAccount.next()) {
+            result.account = 'Invalid Sys_Id';
+            statuscode = 422;
+        } else {
+            if (account.name && (!gcxValidationUtil.validateAccountName(account.name))) {
+                errorList.push("Invalid Account Name");
+            }
+            if (account.phone && (!gcxValidationUtil.validatePhoneNumber(account.phone))) {
+                errorList.push("Invalid Phone number");
+            }
+
+            if (errorList.length > 0) {
+                result.account = errorList;
+                statuscode = 422;
+            } else {
+                custAccount.name = account.name;
+                custAccount.account_parent = account.parentAccount;
+                custAccount.customer = account.customer;
+                custAccount.fax_phone = account.faxPhone;
+                custAccount.phone = account.phone;
+                custAccount.sn_tmt_core_external_id = account.externalId;
+                custAccount.website = account.website;
+                custAccount.u_account_state = account.accountState;
+                custAccount.u_currency_code = account.currencyCode;
+                custAccount.u_gcx_entity = account.gcxEntity;
+                custAccount.u_gcx_area = account.gcxArea;
+                custAccount.u_gcx_region = account.gcxRegion;
+                custAccount.update();
+                result.body = 'Account updated successfully.';
+                statuscode = 200;
+            }
+        }
+    } catch (error) {
+        response.setStatus(500);
+        result.body = "Error occurred " + error.message;
+        response.setBody(result);
+        return;
+    }
+    response.setBody(result);
+    response.setStatus(statuscode);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account/account/{sysId}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/account/{sysId}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:57:26</sys_created_on>
+        <sys_id>ecc5d094471042101e051a8bd36d438f</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>updateCustomerAccount</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_ecc5d094471042101e051a8bd36d438f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:59:09</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

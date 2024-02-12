@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>PUT</http_method>
+        <name>addNewCustomerLocation</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    var req = request.body.data;
+    var status;
+    var statusCode;
+    var result = {};
+    var accountSysId = request.pathParams.sysId;
+
+    // Define mandatory fields for the location
+    var loc_mandatoryFields = ['externalId'];
+
+    if (!req.locations || !Array.isArray(req.locations) || req.locations.length === 0) {
+        result.body = 'Missing or invalid Location details';
+        response.setBody(result);
+        response.setStatus(400);
+        return;
+    }
+
+    var loc_sysids = [];
+
+    var custAccount = new GlideRecord('customer_account');
+    custAccount.addQuery('sys_id', accountSysId);
+    custAccount.query();
+
+    if (!custAccount.next()) {
+        result.body = 'Invalid Sys ID, Account not found';
+        response.setBody(result);
+        response.setStatus(422);
+        return;
+    }
+
+    var gcxValidationUtil = new GCXValidationUtil();
+
+    try {
+        for (var i = 0; i < req.locations.length; i++) {
+            var locationData = req.locations[i];
+
+            // Validate each location using GCXValidationUtil
+            var locationValidationList = gcxValidationUtil.validateLocation([locationData]);
+
+            // Check if there are any validation errors for locations
+            if (locationValidationList.length > 0) {
+                // Set appropriate status and response for validation errors
+                logErrorAndSetResponse("Location validation failed: " + locationValidationList.join(", "));
+                return;
+            }
+
+            for (var q = 0; q < loc_mandatoryFields.length; q++) {
+                var loc_field = loc_mandatoryFields[q];
+
+                if (!locationData[loc_field]) {
+                    logErrorAndSetResponse("Mandatory field in Location: " + loc_field + " is missing.");
+                    return;
+                }
+            }
+
+            // Create a new location
+            var loc = new GlideRecord('cmn_location');
+            loc.initialize();
+            loc.name = locationData.type === 'billing' ? locationData.billingStreet : locationData.shippingStreet;
+            loc.street = locationData.type === 'billing' ? locationData.billingStreet : locationData.shippingStreet;
+            loc.city = locationData.type === 'billing' ? locationData.billingCity : locationData.shippingCity;
+            loc.state = locationData.type === 'billing' ? locationData.billingState : locationData.shippingState;
+            loc.zip = locationData.loc_postalCode || 'DefaultPostalCode';
+            loc.country = locationData.type === 'billing' ? locationData.billingCountry : locationData.shippingCountry;
+            loc.longitude = locationData.type === 'billing' ? locationData.billingLongitude : locationData.shippingLongitude;
+            loc.latitude = locationData.type === 'billing' ? locationData.billingLatitude : locationData.shippingLatitude;
+            loc.type = locationData.type || 'DefaultType';
+            loc.insert();
+
+            var loc_sysid = loc.sys_id;
+
+            // Mapping account with location
+            var acc_rel = new GlideRecord('account_address_relationship');
+            acc_rel.initialize();
+            acc_rel.account = accountSysId;
+            acc_rel.location = loc_sysid;
+            acc_rel.type = locationData.type;
+            acc_rel.insert();
+
+            loc_sysids.push(loc_sysid);
+        }
+
+        result.location = loc_sysids;
+        status = "Success";
+        statusCode = 200;
+    } catch (error) {
+        logErrorAndSetResponse("An error occurred: " + error.message + " or Missing attributes in payload.");
+        return;
+    }
+
+    response.setBody(result);
+    response.setStatus(statusCode);
+
+    function logErrorAndSetResponse(errorMessage) {
+        status = "Unprocessable Content";
+        statusCode = "422";
+        result.error = errorMessage;
+        response.setBody(result);
+        response.setStatus(statusCode);
+    }
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account/location/{sysId}</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/location/{sysId}</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:55:32</sys_created_on>
+        <sys_id>7c451c94471042101e051a8bd36d4377</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>addNewCustomerLocation</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_7c451c94471042101e051a8bd36d4377</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:55:32</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ws_operation">
+    <sys_ws_operation action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <consumes>application/json,application/xml,text/xml</consumes>
+        <consumes_customized>false</consumes_customized>
+        <default_operation_uri/>
+        <enforce_acl>cf9d01d3e73003009d6247e603f6a990</enforce_acl>
+        <http_method>POST</http_method>
+        <name>createCustomerAccount</name>
+        <operation_script><![CDATA[(function process( /*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    var req = request.body.data;
+    var status;
+    var statusCode;
+    var result = {};
+    var gcxValidationUtil = new GCXValidationUtil;
+
+    var account = req.account;
+    var contact = req.contact;
+    var location = req.location;
+
+    if (!account || !contact) {
+        response.setStatus(422);
+        result.body = 'Missing Account/Contact';
+        response.setBody(result);
+        return;
+    }
+    try {
+        var accountValidationList = gcxValidationUtil.validateAccount(account);
+        var contactValidationList = gcxValidationUtil.validateContact(contact);
+        // if (location.length > 0) {
+        //     var locationValidationList = gcxValidationUtil.validateLocation(location);
+        // }
+
+        if ((accountValidationList.length > 0) || (contactValidationList.length > 0)) {
+            result.account = accountValidationList;
+            result.contact = contactValidationList;
+          //result.location = locationValidationList;
+            statusCode = 422;
+        } else {
+			var createCustomerSupplierAccount = new CreateCustomerSupplierAccount;
+			account.gcxEntity = "MS";
+			result = createCustomerSupplierAccount.createAccount(account,contact,location);
+            statusCode = result.status;
+			delete result.status;
+    }
+} catch (error) {
+        response.setStatus(500);
+        result.body = error.message;
+        response.setBody(result);
+        return;
+    }
+       
+    response.setBody(result);
+    response.setStatus(statusCode);
+
+})(request, response);]]></operation_script>
+        <operation_uri>/api/x_1123126_gcx_ms_t/ms_customer_account</operation_uri>
+        <produces>application/json,application/xml,text/xml</produces>
+        <produces_customized>false</produces_customized>
+        <relative_path>/</relative_path>
+        <request_example/>
+        <requires_acl_authorization>true</requires_acl_authorization>
+        <requires_authentication>true</requires_authentication>
+        <requires_snc_internal_role>true</requires_snc_internal_role>
+        <short_description/>
+        <sys_class_name>sys_ws_operation</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:56:09</sys_created_on>
+        <sys_id>227514d4471042101e051a8bd36d4385</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>createCustomerAccount</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_ws_operation_227514d4471042101e051a8bd36d4385</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:56:09</sys_updated_on>
+        <web_service_definition display_value="MS Customer Account">b2f41c94471042101e051a8bd36d4322</web_service_definition>
+        <web_service_version/>
+    </sys_ws_operation>
+</record_update>

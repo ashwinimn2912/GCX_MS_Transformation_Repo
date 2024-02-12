@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_1123126_gcx_ms_t.GCXValidationUtil</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>GCXValidationUtil</name>
+        <script><![CDATA[var GCXValidationUtil = Class.create();
+GCXValidationUtil.prototype = {
+    initialize: function(logMessage) {
+        this.response = new sn_tmt_core.BaseObject();
+        this.response.setValue('status', 422); // success or error 
+        this.request = new sn_tmt_core.BaseObject();
+    },
+
+    /* Purpose: To validate phone number
+    	Inputs: number
+    	Output: True/False    */
+    validatePhoneNumber: function(inputNumber) {
+        var phoneNumReg = /^[0-9()-]+$/;
+        return inputNumber.match(phoneNumReg);
+    },
+
+    /* Purpose: To validate Mandatory Fields
+    	Inputs: fieldList, errorList
+    	Output: errorList    */
+    validateMandatoryFields: function(fieldList, entity, errorList) {
+        for (var j = 0; j < fieldList.length; j++) {
+            var field = fieldList[j];
+            if (!entity[field]) {
+                errorList.push(field + " field is mandatory");
+            }
+        }
+        return errorList;
+    },
+
+    /* Purpose: To validate email
+    	Inputs: email
+    	Output: True/False    */
+    validateEmail: function(email) {
+        var emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/;
+        return emailRegex.test(email);
+    },
+
+    /* Purpose: To validate Contact Name
+    	Inputs: name
+    	Output: True/False    */
+    validateContactName: function(contactName) {
+        var custNameRegex = /^[A-Za-z\s]+$/;
+        return contactName.match(custNameRegex);
+    },
+
+    /* Purpose: To validate Account Name
+    	Inputs: name
+    	Output: True/False    */
+    validateAccountName: function(accountName) {
+        var AccNameRegex = /^[A-Za-z\s.&()_-]+$/;
+        return accountName.match(AccNameRegex);
+    },
+
+    /* Purpose: To validate Account details
+    	Inputs: account(object)
+    	Output: List    */
+    validateAccount: function(account) {
+        var accountValidationList = [];
+        if (account.partner == true) {
+            account.customer = false;
+            account.accountState = "Active";
+        } else {
+            account.customer = true;
+            account.accountState = "New Prospect";
+        }
+        accountValidationList = this.validateMandatoryFields(['name', 'phone', 'externalId'], account, accountValidationList);
+        if (!this.validatePhoneNumber(account.phone)) {
+            accountValidationList.push("Account Phone number is Invalid");
+        }
+        var nameRegex = /^[A-Za-z\s.&()_-]+$/;
+        if (!nameRegex.test(account.name)) {
+            accountValidationList.push("Account Name is Invalid");
+        }
+        return accountValidationList;
+    },
+
+    /* Purpose: To validate Contact details
+    	Inputs: contactList
+    	Output: List    */
+    validateContact: function(contactList, scope) {
+        var contactValidationList = [];
+        for (var i = 0; i < contactList.length; i++) {
+            contactValidationList = this.validateMandatoryFields(['firstName', 'lastName', 'email', 'mobilePhone', 'externalId'], contactList[i], contactValidationList);
+            if (!this.validatePhoneNumber(contactList[i].mobilePhone)) {
+                contactValidationList.push("Mobile Phone is Invalid");
+            }
+            if (!this.validateEmail(contactList[i].email)) {
+                contactValidationList.push("Email is Invalid");
+            }
+            if (!this.validateContactName(contactList[i].firstName)) {
+                contactValidationList.push("Contact First Name is Invalid");
+            }
+            if (!this.validateContactName(contactList[i].lastName)) {
+                contactValidationList.push("Contact Last Name is Invalid");
+            }
+            if (contactList[i].businessPhone && (!this.validatePhoneNumber(contactList[i].businessPhone))) {
+                contactValidationList.push("Business Phone is Invalid");
+            }
+            if (contactList[i].homePhone && (!this.validatePhoneNumber(contactList[i].homePhone))) {
+                contactValidationList.push("Home Phone is Invalid");
+            }
+            if (contactList[i].alternatePhone && (!this.validatePhoneNumber(contactList[i].alternatePhone))) {
+                contactValidationList.push("Alternate Phone is Invalid");
+            }
+        }
+        return contactValidationList;
+    },
+
+    /* Purpose: To validate Location details
+    	Inputs: locationList
+    	Output: List    */
+    validateLocation: function(locationList) {
+        var locationValidationList = [];
+        for (var k = 0; k < locationList.length; k++) {
+            if (!locationList[k].externalId) {
+                locationValidationList.push("ExternalID is missing");
+            }
+        }
+        return locationValidationList;
+    },
+
+    type: 'GCXValidationUtil'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-02-07 10:52:03</sys_created_on>
+        <sys_id>4974d094471042101e051a8bd36d435e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>GCXValidationUtil</sys_name>
+        <sys_package display_value="GCX_MS_Transformation" source="x_1123126_gcx_ms_t">bacffe4dc33fbd10cc6b98477d013120</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="GCX_MS_Transformation">bacffe4dc33fbd10cc6b98477d013120</sys_scope>
+        <sys_update_name>sys_script_include_4974d094471042101e051a8bd36d435e</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2024-02-07 10:52:03</sys_updated_on>
+    </sys_script_include>
+</record_update>
